@@ -18,6 +18,9 @@ templates = Jinja2Templates(directory="html")
 
 #http://localhost:8000/
 
+#ssh -i "MortCalculatorKey.pem" ec2-user@ec2-44-211-45-80.compute-1.amazonaws.com
+#sudo su
+
 @app.get("/", response_class=HTMLResponse)
 async def read_item(request: Request):
     return templates.TemplateResponse(
