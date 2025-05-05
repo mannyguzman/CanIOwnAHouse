@@ -19,7 +19,8 @@
                         <form method="post" action="/evaluate">
                             <div class="mb-3">
                                 <label class="form-label">City</label>
-                                <input type="text" class="form-control" name="city" list="cities" value="{{ searched_city or '' }}" required>
+                            <input type="text" class="form-control" name="city" id="city-input" autocomplete="off" required>
+                            <div id="autocomplete-list" class="dropdown-menu show" style="position: absolute; display: none;"></div>
                             </div>
 
                             {% if error %}
@@ -107,105 +108,66 @@
 </body>
 </html>
 
-    <!--
-
-        <form method="post" action="/search-city">
-            
-            <label for="city">Search City Home Price:</label><br>
-            <input type="text" min="0" step="1" name="city" placeholder="e.g. Springfiel, OR" value="" required><br>
-            <br>
-            <input type="submit" value="Search">
-            <br>
-            <br>
-        </form>
-
-        {% if searched_city %}
-        <h3>City: {{ searched_city }}</h3>
-        {% if price_found %}
-            <p>Average Home Price: ${{ zestimates_average }}</p>
-        {% else %}
-            <p style="color:red;">City not found in our database.</p>
-        {% endif %}
-        {% endif %}
-        <br>
-        
-        <form method="post" action="/calculate-mortgage">
-            
-            <p>What's the...</p> 
-            
-            <label for="home_price">Home Price:</label><br>
-            <input type="number" min="0" step="1" name="home_price" required value="{{ zestimates_average if zestimates_average else ''}}"><br>
-            
-            <label for="mortgage_rate">Mortgate Rate: %</label><br>
-            <input type="number" min="0" step=".01" name="mortgage_rate" value="7.0" required>
-
-            <p>What's your...</p> 
-            <label for="downpayment">Downpayment:</label><br>
-            <input type="number" min="0" step="1" name="downpayment" value="" required><br>
-
-            <label for="yearly_gross_income">Yearly Gross Income:</label><br>
-            <input type="number" min="0" step="1" name="yearly_gross_income" value="" required> <br>
-
-            <br>
-            <br>
-            <input type="submit" value="Calculate">
-          </form>
-
-          
-    {% if downpayment and yearly_gross_income and home_price and mortgage_rate %}
-        <p>Loan Term: 30 years fixed at ${{mortgage_rate}}% mortgage rate</p>
-        <p>Home Price: </p> 
-        <p>${{ "%.2f" % zestimates_average}}</p>
-        <p>Downpayment</p> 
-        <p>${{ "%.2f" % downpayment}} </p>
-        <p>Yearly Gross Income</p> 
-        <p>${{ "%.2f" % yearly_gross_income}}</p> 
-        <p>Your Monthly Payment:<p> 
-        <h3>${{ "%.2f" % monthly_payments }}</h3>
-        <br>
-        <p>Following the 28/36 Rule your monthly payment should be no more than:</p>
-        <p>${{ "%.2f" % max_mortgage_budget }}</p>
-        <p>your Monthly Budget difference is: </p>
-        <p>${{ "%.2f" % monthly_budget }}</p>
-        A negative number is how much over your ${{ "%.2f" % max_mortgage_budget }} monthly budget, and
-        a positive number is how much under your monthly budget.
-
-        <br>
-        <p>This budget calculation assumes that don't have more than ${{ "%.2f" % max_debt_budget }} on your monthly debt payments such as car payments, credit cards, etc.</p>
-    </body>
-
-    {% endif %}
-    -->
-
 
 </body>
 </html>
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const input = document.querySelector('input[name="city"]');
-        const datalist = document.createElement("datalist");
-        datalist.id = "cities";
-        input.setAttribute("list", "cities");
-        document.body.appendChild(datalist);
+    document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("city-input");
+        const dropdown = document.getElementById("autocomplete-list");
     
-        input.addEventListener("input", async function () {
-            const query = input.value;
-            if (query.length < 2) return;
+        let debounceTimer;
     
-            const response = await fetch(`/autocomplete?q=${encodeURIComponent(query)}`);
-            const cities = await response.json();
+        input.addEventListener("input", () => {
+            clearTimeout(debounceTimer);
+            const query = input.value.trim();
     
-            datalist.innerHTML = "";
-            cities.forEach(city => {
-                const option = document.createElement("option");
-                option.value = city;
-                datalist.appendChild(option);
-            });
+            if (query.length < 2) {
+                dropdown.innerHTML = "";
+                dropdown.style.display = "none";
+                return;
+            }
+    
+            debounceTimer = setTimeout(async () => {
+                const response = await fetch(`/autocomplete?q=${encodeURIComponent(query)}`);
+                const suggestions = await response.json();
+    
+                dropdown.innerHTML = "";
+                if (suggestions.length === 0) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+    
+                suggestions.forEach((city) => {
+                    const item = document.createElement("div");
+                    item.classList.add("dropdown-item");
+                    item.textContent = city;
+                    item.addEventListener("click", () => {
+                        input.value = city;
+                        dropdown.innerHTML = "";
+                        dropdown.style.display = "none";
+                    });
+                    dropdown.appendChild(item);
+                });
+    
+                const rect = input.getBoundingClientRect();
+                dropdown.style.left = `${rect.left + window.scrollX}px`;
+                dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                dropdown.style.width = `${rect.width}px`;
+                dropdown.style.display = "block";
+            }, 200); // debounce to reduce API calls
+        });
+    
+        document.addEventListener("click", (e) => {
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.style.display = "none";
+            }
         });
     });
     </script>
+    
     
 
     <script>
