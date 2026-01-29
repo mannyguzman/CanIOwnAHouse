@@ -1,48 +1,53 @@
 <!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CanIOwnAHouse?</title>
-    
-    <meta name="description" content="Find out if you can afford to buy a house in your dream city based on your income, downpayment, and mortgage rate.">
+    <title>Can I Own A House?</title>
+
+    <meta name="description"
+        content="Find out if you can afford to buy a house in your dream city based on your income, downpayment, and mortgage rate.">
     <meta name="robots" content="index, follow">
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5054MQNZG7"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-5054MQNZG7');
-    </script>
 
     <!-- Open Graph for social media previews -->
     <meta property="og:title" content="Can I Own A House?">
-    <meta property="og:description" content="Check if you can afford a home in any city based on your income and current mortgage rates.">
+    <meta property="og:description"
+        content="Check if you can afford a home in any city based on your income and current mortgage rates.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://caniownahouse.com">
-    
-    <!-- Canonical link -->
+
+    <!-- Canonical link (adjust to your actual domain) -->
     <link rel="canonical" href="https://caniownahouse.com" />
-    
+
     <!-- Bootswatch Brite Theme -->
     <link rel="stylesheet" href="/static/css/brite.min.css">
-    </head>
+</head>
+
 <body>
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="row">
-                    <h1 class="text-left mb-4">Where do you want to live?</h1>
                     <!-- Form Column (1/3 on desktop) -->
+                    <h1 class="text-left mb-4">Where do you want to
+                        <div class="btn-group" role="group" aria-label="Own or Rent toggle">
+                            <input type="radio" class="btn-check" name="page-type" id="btn-own" autocomplete="off"
+                                onclick="window.location.href='/'" {% if page_type=='own' %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="btn-own">Own</label>
+                            <input type="radio" class="btn-check" name="page-type" id="btn-rent" autocomplete="off"
+                                onclick="window.location.href='/rent'" {% if page_type=='rent' %}checked{% endif %}>
+                            <label class="btn btn-outline-primary" for="btn-rent">Rent</label>
+                        </div> ?
+                    </h1>
                     <div class="col-md-4 mb-4">
                         <form method="post" action="/evaluate">
                             <div class="mb-3">
                                 <label class="form-label">City</label>
-                            <input type="text" class="form-control" name="city" id="city-input" autocomplete="off" required>
-                            <div id="autocomplete-list" class="dropdown-menu show" style="position: absolute; display: none;"></div>
+                                <input type="text" class="form-control" name="city" id="city-input" autocomplete="off"
+                                    value="{{ searched_city or '' }}" required>
+                                <div id="autocomplete-list" class="dropdown-menu"
+                                    style="position: absolute; display: none;"></div>
                             </div>
 
                             {% if error %}
@@ -50,32 +55,41 @@
                             {% endif %}
 
                             <div class="mb-3">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="togglePriceInput()">Use Custom Home Price</button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="togglePriceInput()">
+                                    Use Custom Home Price
+                                </button>
                             </div>
 
                             <div id="customPriceDiv" class="mb-3" style="display:none;">
                                 <label class="form-label">Custom Home Price ($):</label>
                                 <div class="input-group mb-3">
-                                <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="home_price" step="1">
+                                    <span class="input-group-text">$</span>
+                                    <input type="text" class="form-control currency-input" name="home_price"
+                                        inputmode="numeric" pattern="[0-9,]*">
                                 </div>
                             </div>
+
                             <label class="form-label">Mortgage Rate</label>
                             <div class="input-group mb-3">
-                                <input type="number" class="form-control" name="mortgage_rate" step=".01" value="{{ mortgage_rate or '6.8' }}">
+                                <input type="number" class="form-control" name="mortgage_rate" step=".01"
+                                    value="{{ mortgage_rate or '6.8' }}" min="0" max="25">
                                 <span class="input-group-text">%</span>
                             </div>
 
-                            <label class="form-label">Whats Your Yearly Gross Income?</label>
+                            <label class="form-label">What's Your Yearly Gross Income?</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="yearly_gross_income" step="1" value="{{ yearly_gross_income or '' }}" required>
+                                <input type="text" class="form-control currency-input" name="yearly_gross_income"
+                                    inputmode="numeric" pattern="[0-9,]*"
+                                    value="{{ yearly_gross_income_formatted or '' }}" required>
                             </div>
 
                             <label class="form-label">How much are you planning to put down?</label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="downpayment" step="1" value="{{ downpayment or '' }}" required>
+                                <input type="text" class="form-control currency-input" name="downpayment"
+                                    inputmode="numeric" pattern="[0-9,]*" value="{{ downpayment_formatted or '' }}"
+                                    required>
                             </div>
 
                             <div>
@@ -90,30 +104,30 @@
                         <div class="card">
                             <div class="card-body">
                                 <h2 class="card-title">Can I own a House in {{ searched_city }}?</h2>
-                                
+
                                 {% if affordability == "No" %}
                                 <div class="alert alert-dismissible alert-danger" style="max-width: 25rem;">
-                                <h1 class="alert-heading">Nope</h1>
-                                <p class="mb-0">Your monthly payment exceeds the safe budget based on your income</p>
+                                    <h1 class="alert-heading">Nope</h1>
+                                    <p class="mb-0">Your monthly payment exceeds the safe budget based on your income
+                                    </p>
                                 </div>
                                 {% elif affordability == "Maybe" %}
                                 <div class="alert alert-dismissible alert-warning" style="max-width: 25rem;">
-                                <h1 class="alert-heading">Maybe</h1>
-                                <p class="mb-0">You might qualify if you have no other debts</p>
+                                    <h1 class="alert-heading">Maybe</h1>
+                                    <p class="mb-0">You might qualify if you have no other debts</p>
                                 </div>
                                 {% else %}
                                 <div class="alert alert-dismissible alert-success" style="max-width: 25rem;">
-                                <h1 class="alert-heading">Yes!</h1>
-                                <p class="mb-0">You’re within a safe range</p>
+                                    <h1 class="alert-heading">Yes!</h1>
+                                    <p class="mb-0">You're within a safe range</p>
                                 </div>
                                 {% endif %}
-                               
-                                <p>Average Home Price in {{ searched_city }}: ${{ "%.2f" % zestimates_average }}</p>
-                                <p>Monthly Payment: ${{ "%.2f" % monthly_payments }}</p>
-                                <p>Budget Limit (28% Rule): ${{ "%.2f" % max_mortgage_budget }}</p>
-                                <p>Monthly Budget Difference: ${{ "%.2f" % monthly_budget }}</p>
 
-                                
+                                <h3>Average Home Price in {{ searched_city }}: ${{"{:,.0f}".format(zestimates_average|float)}}</h3>
+                                <h3>Monthly Payment: ${{ "{:,.0f}".format(monthly_payments|float) }}</h3>
+                                <br>
+                                <h3>Your Monthly Budget Limit: ${{ "{:,.0f}".format(max_mortgage_budget|float) }}</h3>
+                                <p>Monthly Budget Difference: ${{ "{:,.0f}".format(monthly_budget|float) }}</p>
                             </div>
                         </div>
                         {% endif %}
@@ -123,78 +137,109 @@
         </div>
     </div>
 
-
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
 
-</body>
-</html>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const input = document.getElementById("city-input");
+            const dropdown = document.getElementById("autocomplete-list");
 
+            let debounceTimer;
 
-</body>
-</html>
+            input.addEventListener("input", () => {
+                clearTimeout(debounceTimer);
+                const query = input.value.trim();
 
-
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const input = document.getElementById("city-input");
-        const dropdown = document.getElementById("autocomplete-list");
-    
-        let debounceTimer;
-    
-        input.addEventListener("input", () => {
-            clearTimeout(debounceTimer);
-            const query = input.value.trim();
-    
-            if (query.length < 2) {
-                dropdown.innerHTML = "";
-                dropdown.style.display = "none";
-                return;
-            }
-    
-            debounceTimer = setTimeout(async () => {
-                const response = await fetch(`/autocomplete?q=${encodeURIComponent(query)}`);
-                const suggestions = await response.json();
-    
-                dropdown.innerHTML = "";
-                if (suggestions.length === 0) {
+                if (query.length < 2) {
+                    dropdown.innerHTML = "";
                     dropdown.style.display = "none";
                     return;
                 }
-    
-                suggestions.forEach((city) => {
-                    const item = document.createElement("div");
-                    item.classList.add("dropdown-item");
-                    item.textContent = city;
-                    item.addEventListener("click", () => {
-                        input.value = city;
-                        dropdown.innerHTML = "";
-                        dropdown.style.display = "none";
-                    });
-                    dropdown.appendChild(item);
-                });
-    
-                const rect = input.getBoundingClientRect();
-                dropdown.style.left = `${rect.left + window.scrollX}px`;
-                dropdown.style.top = `${rect.bottom + window.scrollY}px`;
-                dropdown.style.width = `${rect.width}px`;
-                dropdown.style.display = "block";
-            }, 200); // debounce to reduce API calls
-        });
-    
-        document.addEventListener("click", (e) => {
-            if (!dropdown.contains(e.target) && e.target !== input) {
-                dropdown.style.display = "none";
-            }
-        });
-    });
-    </script>
-    
-    
 
-    <script>
+                debounceTimer = setTimeout(async () => {
+                    const response = await fetch(`/autocomplete?q=${encodeURIComponent(query)}&type=own`);
+                    const suggestions = await response.json();
+
+                    dropdown.innerHTML = "";
+                    if (suggestions.length === 0) {
+                        dropdown.style.display = "none";
+                        return;
+                    }
+
+                    suggestions.forEach((city) => {
+                        const item = document.createElement("div");
+                        item.classList.add("dropdown-item");
+                        item.textContent = city;
+                        item.addEventListener("click", () => {
+                            input.value = city;
+                            dropdown.innerHTML = "";
+                            dropdown.style.display = "none";
+                        });
+                        dropdown.appendChild(item);
+                    });
+
+                    const rect = input.getBoundingClientRect();
+                    dropdown.style.left = `${rect.left + window.scrollX}px`;
+                    dropdown.style.top = `${rect.bottom + window.scrollY}px`;
+                    dropdown.style.width = `${rect.width}px`;
+                    dropdown.style.display = "block";
+                }, 200);
+            });
+
+            document.addEventListener("click", (e) => {
+                if (!dropdown.contains(e.target) && e.target !== input) {
+                    dropdown.style.display = "none";
+                }
+            });
+        });
+
         function togglePriceInput() {
             const div = document.getElementById("customPriceDiv");
             div.style.display = div.style.display === "none" ? "block" : "none";
         }
+
+        // Format currency inputs
+        function formatCurrencyInput(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+
+            if (value) {
+                // Add commas
+                value = parseInt(value, 10).toLocaleString('en-US');
+                input.value = value;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const currencyInputs = document.querySelectorAll('.currency-input');
+
+            currencyInputs.forEach(input => {
+                // Format existing values
+                if (input.value) {
+                    formatCurrencyInput(input);
+                }
+
+                // Format on input
+                input.addEventListener('input', function () {
+                    formatCurrencyInput(this);
+                });
+            });
+
+            // Remove commas before submission
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function (e) {
+                    const currencyInputs = this.querySelectorAll('.currency-input');
+                    currencyInputs.forEach(input => {
+                        input.value = input.value.replace(/,/g, '');
+                    });
+                });
+            });
+        });
     </script>
+
+
+</body>
+
+</html>
